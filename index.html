@@ -35,9 +35,13 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
 .mode-tab{flex:1;padding:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer;font-size:.85em;font-weight:600;text-align:center;transition:all .2s}
 .mode-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 .logo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.logo-grid img{width:100%;aspect-ratio:1;object-fit:contain;border:2px solid var(--border);border-radius:8px;cursor:pointer;padding:4px;background:var(--bg);transition:all .2s}
-.logo-grid img:hover{border-color:var(--accent)}
-.logo-grid img.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.logo-item{position:relative}
+.logo-item img{width:100%;aspect-ratio:1;object-fit:contain;border:2px solid var(--border);border-radius:8px;padding:4px;background:var(--bg);transition:all .2s;display:block}
+.logo-item:hover img{border-color:var(--accent)}
+.logo-item img.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.logo-btns{display:flex;gap:2px;margin-top:3px}
+.logo-btns button{flex:1;padding:3px 0;font-size:.65em;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer;transition:all .2s;white-space:nowrap}
+.logo-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .canvas-wrap{position:relative;display:inline-block;max-width:100%;max-height:calc(100vh - 100px);cursor:default;touch-action:none}
 .canvas-wrap canvas{max-width:100%;max-height:calc(100vh - 100px);border-radius:8px;box-shadow:var(--shadow)}
 .no-img{opacity:.4;font-size:1.1em}
@@ -203,15 +207,26 @@ const logos=[
 ];
 const logoGrid=document.getElementById('logoGrid');
 logos.forEach((l,i)=>{
+  const wrap=document.createElement('div');wrap.className='logo-item';
   const im=document.createElement('img');im.src=l.src;im.alt=l.name;im.title=l.name;
-  im.onclick=()=>{
+  const btns=document.createElement('div');btns.className='logo-btns';
+  const btnWm=document.createElement('button');btnWm.textContent='作为水印';
+  btnWm.onclick=()=>{
     logoGrid.querySelectorAll('img').forEach(x=>x.classList.remove('selected'));
     im.classList.add('selected');
     const ni=new Image();ni.crossOrigin='anonymous';
     ni.onload=()=>{logoImg=ni;setMode('image');draw()};
     ni.src=l.src;
   };
-  logoGrid.appendChild(im);
+  const btnMain=document.createElement('button');btnMain.textContent='作为主图';
+  btnMain.onclick=()=>{
+    const ni=new Image();ni.crossOrigin='anonymous';
+    ni.onload=()=>{img=ni;placeholder.style.display='none';canvasWrap.style.display='inline-block';dlBtn.disabled=false;draw()};
+    ni.src=l.src;
+  };
+  btns.appendChild(btnWm);btns.appendChild(btnMain);
+  wrap.appendChild(im);wrap.appendChild(btns);
+  logoGrid.appendChild(wrap);
 });
 
 function setMode(m){
