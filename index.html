@@ -17,7 +17,7 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
 .theme-btn{background:none;border:1px solid var(--border);color:var(--text);cursor:pointer;border-radius:8px;padding:6px 12px;font-size:.9em;transition:all .2s}
 .theme-btn:hover{border-color:var(--accent)}
 .group{margin-bottom:14px}
-.group label{display:block;font-size:.85em;margin-bottom:4px;font-weight:600;opacity:.8}
+.group label{display:block;font-size:.85em;margin-bottom:6px;font-weight:600;opacity:.8}
 .group input[type=text],.group select,.group input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.9em}
 .group input[type=range]{width:100%}
 .group input[type=color]{width:50px;height:32px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:none;padding:2px}
@@ -34,14 +34,14 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
 .mode-tabs{display:flex;gap:6px;margin-bottom:14px}
 .mode-tab{flex:1;padding:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer;font-size:.85em;font-weight:600;text-align:center;transition:all .2s}
 .mode-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.logo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.logo-item{position:relative}
-.logo-item img{width:100%;aspect-ratio:1;object-fit:contain;border:2px solid var(--border);border-radius:8px;padding:4px;background:var(--bg);transition:all .2s;display:block}
-.logo-item:hover img{border-color:var(--accent)}
-.logo-item img.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.logo-btns{display:flex;flex-direction:column;gap:2px;margin-top:3px}
-.logo-btns button{padding:3px 0;font-size:.65em;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer;transition:all .2s;white-space:nowrap}
-.logo-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Logo 格子：3 列，每格只有一个缩略图，点击即触发 */
+.logo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:4px}
+.logo-item{cursor:pointer;border:2px solid var(--border);border-radius:8px;padding:4px;background:var(--bg);transition:all .2s;aspect-ratio:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.logo-item:hover{border-color:var(--accent);background:rgba(74,144,217,.08)}
+.logo-item.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.logo-item img{width:100%;height:100%;object-fit:contain;display:block;pointer-events:none}
+
 .canvas-wrap{position:relative;display:inline-block;max-width:100%;max-height:calc(100vh - 100px);cursor:default;touch-action:none}
 .canvas-wrap canvas{max-width:100%;max-height:calc(100vh - 100px);border-radius:8px;box-shadow:var(--shadow)}
 .no-img{opacity:.4;font-size:1.1em}
@@ -56,19 +56,61 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
 <div class="app">
   <div class="panel">
     <h1>🖼 图片水印工具 <button class="theme-btn" onclick="toggleTheme()">🌙</button></h1>
+
+    <!-- 上传区域 -->
     <label class="upload-zone" for="fileInput" id="dropZone">
       <input type="file" id="fileInput" accept="image/*">
       <p>📁 点击或拖拽上传图片</p>
       <p style="font-size:.8em;opacity:.5;margin-top:4px">支持 JPG / PNG / GIF</p>
     </label>
+
+    <!-- 模式切换 -->
     <div class="mode-tabs">
       <button class="mode-tab active" id="tabText" onclick="setMode('text')">✏️ 文字水印</button>
       <button class="mode-tab" id="tabImg" onclick="setMode('image')">🖼 图片水印</button>
     </div>
-    <div id="imgWmPanel" style="display:none">
-      <div class="group"><label>常用 Logo</label>
-        <div class="logo-grid" id="logoGrid"></div>
+
+    <!-- ===== 文字水印模式面板 ===== -->
+    <div id="textWmPanel">
+      <!-- 常用图片区域（仅文字水印模式下显示） -->
+      <div class="group">
+        <label>📷 常用图片（点击加载）</label>
+        <div class="logo-grid" id="logoGridText"></div>
       </div>
+
+      <div class="group"><label>水印文字</label>
+        <input type="text" id="wText" value="© 版权所有" oninput="draw()">
+        <p style="font-size:.75em;opacity:.5;margin-top:4px">提示：中英文混排时请在中英文/数字之间加空格，如：AWS 云服务</p>
+      </div>
+      <div class="group"><label>字体</label><select id="wFont" onchange="draw()">
+        <option value="Noto Sans SC" selected>思源黑体 SC</option>
+        <option value="Amazon Ember">Amazon Ember</option>
+        <option>Arial</option><option>Georgia</option>
+        <option>微软雅黑</option><option>楷体</option><option>黑体</option><option>宋体</option>
+        <option>Courier New</option><option>Times New Roman</option>
+      </select></div>
+      <div class="group"><label>文字大小</label><div class="row"><input type="range" id="wSize" min="10" max="200" value="48" oninput="draw();sizeVal.textContent=this.value+'px'"><span class="val" id="sizeVal">48px</span></div></div>
+      <div class="group"><label>颜色 & 透明度</label><div class="row"><input type="color" id="wColor" value="#ffffff" oninput="draw()"><input type="range" id="wAlpha" min="0" max="100" value="50" oninput="draw();alphaVal.textContent=this.value+'%'"><span class="val" id="alphaVal">50%</span></div></div>
+      <div class="group"><label>预设位置</label><select id="wPos" onchange="applyTextPreset();draw()">
+        <option value="tl">左上角</option><option value="tc">上居中</option><option value="tr">右上角</option>
+        <option value="ml">左居中</option><option value="mc" selected>正中央</option><option value="mr">右居中</option>
+        <option value="bl">左下角</option><option value="bc">下居中</option><option value="br">右下角</option>
+        <option value="custom">自定义（拖拽）</option>
+      </select></div>
+      <div class="group"><label>旋转角度</label><div class="row"><input type="range" id="wRotate" min="-180" max="180" value="0" oninput="draw();rotVal.textContent=this.value+'°'"><span class="val" id="rotVal">0°</span></div></div>
+      <div class="group"><label><input type="checkbox" id="wBold" onchange="draw()"> 文字加粗</label></div>
+      <div class="group"><label><input type="checkbox" id="wStroke" onchange="draw()"> 文字描边</label></div>
+      <div class="group" id="strokeOpts" style="display:none"><label>描边颜色 & 宽度</label><div class="row"><input type="color" id="wStrokeColor" value="#000000" oninput="draw()"><input type="range" id="wStrokeWidth" min="1" max="20" value="2" oninput="draw();strokeWVal.textContent=this.value+'px'"><span class="val" id="strokeWVal">2px</span></div></div>
+    </div>
+
+    <!-- ===== 图片水印模式面板 ===== -->
+    <div id="imgWmPanel" style="display:none">
+      <!-- 常用水印 Logo 区域（仅图片水印模式下显示） -->
+      <div class="group">
+        <label>🏷 常用水印（点击使用）</label>
+        <div class="logo-grid" id="logoGridImg"></div>
+      </div>
+
       <div class="group"><label>预设位置</label><select id="iwPos" onchange="applyImgPreset();draw()">
         <option value="tl">左上角</option><option value="tc">上居中</option><option value="tr">右上角</option>
         <option value="ml">左居中</option><option value="mc" selected>正中央</option><option value="mr">右居中</option>
@@ -79,26 +121,10 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
       <div class="group"><label>透明度</label><div class="row"><input type="range" id="iwAlpha" min="0" max="100" value="80" oninput="draw();iwAlphaVal.textContent=this.value+'%'"><span class="val" id="iwAlphaVal">80%</span></div></div>
       <div class="group"><label>旋转角度</label><div class="row"><input type="range" id="iwRotate" min="-180" max="180" value="0" oninput="draw();iwRotVal.textContent=this.value+'°'"><span class="val" id="iwRotVal">0°</span></div></div>
     </div>
-    <div id="textWmPanel">
-    <div class="group"><label>水印文字</label><input type="text" id="wText" value="© 版权所有" oninput="draw()"><p style="font-size:.75em;opacity:.5;margin-top:4px">提示：中英文混排时请在中英文/数字之间加空格，如：AWS 云服务</p></div>
-    <div class="group"><label>字体</label><select id="wFont" onchange="draw()">
-      <option value="Noto Sans SC" selected>思源黑体 SC</option><option value="Amazon Ember">Amazon Ember</option><option>Arial</option><option>Georgia</option><option>微软雅黑</option><option>楷体</option><option>黑体</option><option>宋体</option><option>Courier New</option><option>Times New Roman</option>
-    </select></div>
-    <div class="group"><label>文字大小</label><div class="row"><input type="range" id="wSize" min="10" max="200" value="48" oninput="draw();sizeVal.textContent=this.value+'px'"><span class="val" id="sizeVal">48px</span></div></div>
-    <div class="group"><label>颜色 & 透明度</label><div class="row"><input type="color" id="wColor" value="#ffffff" oninput="draw()"><input type="range" id="wAlpha" min="0" max="100" value="50" oninput="draw();alphaVal.textContent=this.value+'%'"><span class="val" id="alphaVal">50%</span></div></div>
-    <div class="group"><label>预设位置</label><select id="wPos" onchange="applyPreset();draw()">
-      <option value="tl">左上角</option><option value="tc">上居中</option><option value="tr">右上角</option>
-      <option value="ml">左居中</option><option value="mc" selected>正中央</option><option value="mr">右居中</option>
-      <option value="bl">左下角</option><option value="bc">下居中</option><option value="br">右下角</option>
-      <option value="custom">自定义（拖拽）</option>
-    </select></div>
-    <div class="group"><label>旋转角度</label><div class="row"><input type="range" id="wRotate" min="-180" max="180" value="0" oninput="draw();rotVal.textContent=this.value+'°'"><span class="val" id="rotVal">0°</span></div></div>
-    <div class="group"><label><input type="checkbox" id="wBold" onchange="draw()"> 文字加粗</label></div>
-    <div class="group"><label><input type="checkbox" id="wStroke" onchange="draw()"> 文字描边</label></div>
-    <div class="group" id="strokeOpts" style="display:none"><label>描边颜色 & 宽度</label><div class="row"><input type="color" id="wStrokeColor" value="#000000" oninput="draw()"><input type="range" id="wStrokeWidth" min="1" max="20" value="2" oninput="draw();strokeWVal.textContent=this.value+'px'"><span class="val" id="strokeWVal">2px</span></div></div>
-    </div>
+
     <button class="btn" id="dlBtn" disabled onclick="download()">⬇ 下载水印图片</button>
   </div>
+
   <div class="preview-area" id="previewArea">
     <div class="no-img" id="placeholder">请上传一张图片开始</div>
     <div class="canvas-wrap" id="canvasWrap" style="display:none">
@@ -106,228 +132,278 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
     </div>
   </div>
 </div>
+
 <script>
-const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),fileInput=document.getElementById('fileInput'),dropZone=document.getElementById('dropZone'),canvasWrap=document.getElementById('canvasWrap'),placeholder=document.getElementById('placeholder');
-let img=null,customX=.5,customY=.5,dragging=false;
+// ── 基础元素 ──────────────────────────────────────────────
+const cv         = document.getElementById('cv');
+const ctx        = cv.getContext('2d');
+const fileInput  = document.getElementById('fileInput');
+const dropZone   = document.getElementById('dropZone');
+const canvasWrap = document.getElementById('canvasWrap');
+const placeholder= document.getElementById('placeholder');
+const dlBtn      = document.getElementById('dlBtn');
 
-function toggleTheme(){document.body.classList.toggle('dark');document.querySelector('.theme-btn').textContent=document.body.classList.contains('dark')?'☀️':'🌙'}
+// ── 状态 ──────────────────────────────────────────────────
+let mode      = 'text';   // 'text' | 'image'
+let img       = null;     // 主图
+let logoImg   = null;     // 图片水印图层
+let textCustomX = .5, textCustomY = .5;  // 文字水印拖拽位置
+let iwCustomX   = .5, iwCustomY   = .5;  // 图片水印拖拽位置
+let dragging  = false;
+let dragOffX  = 0, dragOffY = 0;
 
-fileInput.onchange=e=>{if(e.target.files[0])loadImg(e.target.files[0])};
-dropZone.ondragover=e=>{e.preventDefault();dropZone.style.borderColor='var(--accent)'};
-dropZone.ondragleave=()=>dropZone.style.borderColor='';
-dropZone.ondrop=e=>{e.preventDefault();dropZone.style.borderColor='';if(e.dataTransfer.files[0])loadImg(e.dataTransfer.files[0])};
+// ── Logo 列表 ────────────────────────────────────────────
+const logos = [
+  {src:'logos/ug-qrcode-logo.png', name:'UG 二维码'},
+  {src:'logos/top-left-logo.png',  name:'左上角 Logo'},
+  {src:'logos/black-logo.png',     name:'黑色 Logo'},
+  {src:'logos/resource-2.png',     name:'资源 2'},
+  {src:'logos/resource-3.png',     name:'资源 3'},
+  {src:'logos/resource-4.png',     name:'资源 4'},
+  {src:'logos/resource-5.png',     name:'资源 5'}
+];
+
+// ── 主题切换 ──────────────────────────────────────────────
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  document.querySelector('.theme-btn').textContent =
+    document.body.classList.contains('dark') ? '☀️' : '🌙';
+}
+
+// ── 文件上传 / 拖拽 ───────────────────────────────────────
+fileInput.onchange = e => { if(e.target.files[0]) loadImg(e.target.files[0]); };
+dropZone.ondragover  = e => { e.preventDefault(); dropZone.style.borderColor='var(--accent)'; };
+dropZone.ondragleave = ()=> { dropZone.style.borderColor=''; };
+dropZone.ondrop = e => {
+  e.preventDefault(); dropZone.style.borderColor='';
+  if(e.dataTransfer.files[0]) loadImg(e.dataTransfer.files[0]);
+};
 
 function loadImg(file){
-  const r=new FileReader();
-  r.onload=e=>{
-    const i=new Image();
-    i.onload=()=>{img=i;mainImgLogoSrc=null;placeholder.style.display='none';canvasWrap.style.display='inline-block';dlBtn.disabled=false;draw()};
-    i.src=e.target.result;
+  const r = new FileReader();
+  r.onload = e => {
+    const i = new Image();
+    i.onload = () => {
+      img = i;
+      showCanvas();
+      draw();
+    };
+    i.src = e.target.result;
   };
   r.readAsDataURL(file);
 }
 
-function getPos(w,h,tw,th){
-  const p=wPos.value,pad=20;
-  if(p==='custom')return[customX*w,customY*h];
-  const xs={l:pad+tw/2,c:w/2,r:w-pad-tw/2},ys={t:pad+th/2,m:h/2,b:h-pad-th/2};
-  return[xs[p[1]]||xs.c,ys[p[0]]||ys.m];
+function showCanvas(){
+  placeholder.style.display = 'none';
+  canvasWrap.style.display  = 'inline-block';
+  dlBtn.disabled = false;
 }
 
-function applyPreset(){if(wPos.value!=='custom'){customX=.5;customY=.5}}
+// ── 构建两套 Logo 格子 ────────────────────────────────────
+function buildLogoGrids(){
+  const gridText = document.getElementById('logoGridText');
+  const gridImg  = document.getElementById('logoGridImg');
 
-document.getElementById('wStroke').onchange=function(){document.getElementById('strokeOpts').style.display=this.checked?'':'none';draw()};
+  logos.forEach(l => {
+    // —— 文字水印模式：点击 = 加载为主图 ——
+    const itemT = document.createElement('div');
+    itemT.className = 'logo-item';
+    itemT.title = l.name;
+    const imgT = document.createElement('img');
+    imgT.src = l.src; imgT.alt = l.name;
+    itemT.appendChild(imgT);
+    itemT.onclick = () => {
+      // 清除旧选中
+      gridText.querySelectorAll('.logo-item').forEach(x => x.classList.remove('selected'));
+      itemT.classList.add('selected');
+      // 加载为主图（和上传图片完全一样的效果）
+      const ni = new Image(); ni.crossOrigin = 'anonymous';
+      ni.onload = () => { img = ni; showCanvas(); draw(); };
+      ni.src = l.src;
+    };
+    gridText.appendChild(itemT);
 
+    // —— 图片水印模式：点击 = 作为水印叠加 ——
+    const itemI = document.createElement('div');
+    itemI.className = 'logo-item';
+    itemI.title = l.name;
+    const imgI = document.createElement('img');
+    imgI.src = l.src; imgI.alt = l.name;
+    itemI.appendChild(imgI);
+    itemI.onclick = () => {
+      // 清除旧选中
+      gridImg.querySelectorAll('.logo-item').forEach(x => x.classList.remove('selected'));
+      itemI.classList.add('selected');
+      // 只替换水印图层，不动主图
+      const ni = new Image(); ni.crossOrigin = 'anonymous';
+      ni.onload = () => { logoImg = ni; draw(); };
+      ni.src = l.src;
+    };
+    gridImg.appendChild(itemI);
+  });
+}
+buildLogoGrids();
+
+// ── 模式切换 ──────────────────────────────────────────────
+function setMode(m){
+  mode = m;
+  document.getElementById('textWmPanel').style.display = m==='text'  ? '' : 'none';
+  document.getElementById('imgWmPanel').style.display  = m==='image' ? '' : 'none';
+  document.getElementById('tabText').classList.toggle('active', m==='text');
+  document.getElementById('tabImg').classList.toggle('active',  m==='image');
+  draw();
+}
+
+// ── 描边开关 ──────────────────────────────────────────────
+document.getElementById('wStroke').onchange = function(){
+  document.getElementById('strokeOpts').style.display = this.checked ? '' : 'none';
+  draw();
+};
+
+// ── 位置辅助 ──────────────────────────────────────────────
+function calcPos(posVal, cw, ch, ew, eh, cx, cy){
+  // posVal: preset key | 'custom'; cx/cy: 自定义比例
+  if(posVal === 'custom') return [cx * cw, cy * ch];
+  const pad = 20;
+  const xs = {l: pad+ew/2, c: cw/2, r: cw-pad-ew/2};
+  const ys = {t: pad+eh/2, m: ch/2, b: ch-pad-eh/2};
+  return [xs[posVal[1]] ?? xs.c, ys[posVal[0]] ?? ys.m];
+}
+
+function applyTextPreset(){ if(document.getElementById('wPos').value!=='custom'){textCustomX=.5;textCustomY=.5} }
+function applyImgPreset(){  if(document.getElementById('iwPos').value!=='custom'){iwCustomX=.5;iwCustomY=.5} }
+
+// ── 核心绘制 ─────────────────────────────────────────────
 function draw(){
-  if(!img)return;
-  cv.width=img.width;cv.height=img.height;
-  ctx.drawImage(img,0,0);
-  const text=wText.value;if(!text)return;
-  const size=+wSize.value,alpha=wAlpha.value/100,angle=wRotate.value*Math.PI/180,font=wFont.value;
-  const bold=wBold.checked?'bold ':'';
-  ctx.save();
-  ctx.font=`${bold}${size}px "${font}"`;
-  ctx.fillStyle=wColor.value;
-  ctx.globalAlpha=alpha;
-  ctx.textAlign='center';ctx.textBaseline='middle';
-  const m=ctx.measureText(text),tw=m.width,th=size;
-  const[x,y]=getPos(cv.width,cv.height,tw,th);
-  ctx.translate(x,y);ctx.rotate(angle);
-  if(wStroke.checked){ctx.strokeStyle=wStrokeColor.value;ctx.lineWidth=+wStrokeWidth.value;ctx.lineJoin='round';ctx.strokeText(text,0,0)}
-  ctx.fillText(text,0,0);
-  ctx.restore();
-}
+  if(!img) return;
 
-function download(){
-  if(!img)return;
-  const a=document.createElement('a');a.download='watermarked.png';a.href=cv.toDataURL('image/png');a.click();
-}
+  // 1. 清空 canvas，画主图
+  cv.width  = img.width;
+  cv.height = img.height;
+  ctx.drawImage(img, 0, 0);
 
-// drag on canvas — auto-switch to custom mode
-let dragOffX=0,dragOffY=0;
-function startDrag(e){
-  if(!img)return;
-  e.preventDefault();
-  const rect=cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e;
-  const sx=(pt.clientX-rect.left)/rect.width,sy=(pt.clientY-rect.top)/rect.height;
-  if(wPos.value!=='custom'){
-    const text=wText.value,size=+wSize.value,font=wFont.value,bold=wBold.checked?'bold ':'';
-    ctx.font=`${bold}${size}px "${font}"`;
-    const tw=ctx.measureText(text).width,th=size;
-    const[px,py]=getPos(cv.width,cv.height,tw,th);
-    customX=px/cv.width;customY=py/cv.height;
-    wPos.value='custom';
+  // 2. 叠加水印（二选一，绝不重复）
+  if(mode === 'text'){
+    // ── 文字水印 ──
+    const text = document.getElementById('wText').value;
+    if(!text) return;
+    const size  = +document.getElementById('wSize').value;
+    const alpha = document.getElementById('wAlpha').value / 100;
+    const angle = document.getElementById('wRotate').value * Math.PI / 180;
+    const font  = document.getElementById('wFont').value;
+    const bold  = document.getElementById('wBold').checked ? 'bold ' : '';
+    ctx.save();
+    ctx.font         = `${bold}${size}px "${font}"`;
+    ctx.fillStyle    = document.getElementById('wColor').value;
+    ctx.globalAlpha  = alpha;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    const tw = ctx.measureText(text).width, th = size;
+    const [x, y] = calcPos(
+      document.getElementById('wPos').value,
+      cv.width, cv.height, tw, th, textCustomX, textCustomY
+    );
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    if(document.getElementById('wStroke').checked){
+      ctx.strokeStyle = document.getElementById('wStrokeColor').value;
+      ctx.lineWidth   = +document.getElementById('wStrokeWidth').value;
+      ctx.lineJoin    = 'round';
+      ctx.strokeText(text, 0, 0);
+    }
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+
+  } else if(mode === 'image' && logoImg){
+    // ── 图片水印 ──
+    const scale = document.getElementById('iwScale').value / 100;
+    const alpha = document.getElementById('iwAlpha').value / 100;
+    const angle = document.getElementById('iwRotate').value * Math.PI / 180;
+    const lw = logoImg.width  * scale * (cv.width / 800);
+    const lh = logoImg.height * scale * (cv.width / 800);
+    const [x, y] = calcPos(
+      document.getElementById('iwPos').value,
+      cv.width, cv.height, lw, lh, iwCustomX, iwCustomY
+    );
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.drawImage(logoImg, -lw/2, -lh/2, lw, lh);
+    ctx.restore();
   }
-  dragOffX=sx-customX;dragOffY=sy-customY;
-  dragging=true;
 }
-canvasWrap.onmousedown=startDrag;
-canvasWrap.addEventListener('touchstart',startDrag,{passive:false});
-window.onmousemove=e=>{if(dragging){e.preventDefault();moveDrag(e)}};
-window.addEventListener('touchmove',e=>{if(dragging){e.preventDefault();moveDrag(e)}},{passive:false});
-window.onmouseup=()=>dragging=false;
-window.addEventListener('touchend',()=>dragging=false);
+
+// ── 下载 ─────────────────────────────────────────────────
+function download(){
+  if(!img) return;
+  const a = document.createElement('a');
+  a.download = 'watermarked.png';
+  a.href = cv.toDataURL('image/png');
+  a.click();
+}
+
+// ── Canvas 拖拽（移动水印位置）────────────────────────────
+function startDrag(e){
+  if(!img) return;
+  e.preventDefault();
+  const rect = cv.getBoundingClientRect();
+  const pt   = e.touches ? e.touches[0] : e;
+  const sx   = (pt.clientX - rect.left) / rect.width;
+  const sy   = (pt.clientY - rect.top)  / rect.height;
+
+  if(mode === 'text'){
+    const posEl = document.getElementById('wPos');
+    if(posEl.value !== 'custom'){
+      // 把当前预设位置转成自定义比例
+      const text = document.getElementById('wText').value;
+      const size = +document.getElementById('wSize').value;
+      const font = document.getElementById('wFont').value;
+      const bold = document.getElementById('wBold').checked ? 'bold ' : '';
+      ctx.font = `${bold}${size}px "${font}"`;
+      const tw = ctx.measureText(text).width, th = size;
+      const [px, py] = calcPos(posEl.value, cv.width, cv.height, tw, th, textCustomX, textCustomY);
+      textCustomX = px / cv.width;
+      textCustomY = py / cv.height;
+      posEl.value = 'custom';
+    }
+    dragOffX = sx - textCustomX;
+    dragOffY = sy - textCustomY;
+  } else {
+    const posEl = document.getElementById('iwPos');
+    if(posEl.value !== 'custom' && logoImg){
+      const scale = document.getElementById('iwScale').value / 100;
+      const lw = logoImg.width  * scale * (cv.width / 800);
+      const lh = logoImg.height * scale * (cv.width / 800);
+      const [px, py] = calcPos(posEl.value, cv.width, cv.height, lw, lh, iwCustomX, iwCustomY);
+      iwCustomX = px / cv.width;
+      iwCustomY = py / cv.height;
+      posEl.value = 'custom';
+    }
+    dragOffX = sx - iwCustomX;
+    dragOffY = sy - iwCustomY;
+  }
+  dragging = true;
+}
 
 function moveDrag(e){
-  const rect=cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e;
-  customX=Math.max(0,Math.min(1,(pt.clientX-rect.left)/rect.width-dragOffX));
-  customY=Math.max(0,Math.min(1,(pt.clientY-rect.top)/rect.height-dragOffY));
-  draw();
-}
-// --- Mode switching ---
-let mode='text', logoImg=null, iwCustomX=.5, iwCustomY=.5, mainImgLogoSrc=null;
-const logos=[
-  {src:'logos/ug-qrcode-logo.png',name:'UG 二维码'},
-  {src:'logos/top-left-logo.png',name:'左上角'},
-  {src:'logos/black-logo.png',name:'黑色'},
-  {src:'logos/resource-2.png',name:'资源 2'},
-  {src:'logos/resource-3.png',name:'资源 3'},
-  {src:'logos/resource-4.png',name:'资源 4'},
-  {src:'logos/resource-5.png',name:'资源 5'}
-];
-const logoGrid=document.getElementById('logoGrid');
-logos.forEach((l,i)=>{
-  const wrap=document.createElement('div');wrap.className='logo-item';
-  const im=document.createElement('img');im.src=l.src;im.alt=l.name;im.title=l.name;
-  const btns=document.createElement('div');btns.className='logo-btns';
-  const btnWm=document.createElement('button');btnWm.textContent='作为水印';
-  btnWm.onclick=()=>{
-    if(mainImgLogoSrc===l.src){
-      img=null;mainImgLogoSrc=null;
-      placeholder.style.display='';canvasWrap.style.display='none';dlBtn.disabled=true;
-      alert('当前主图就是该 Logo，已清除主图，请先上传一张主图再添加水印');
-      return;
-    }
-    logoGrid.querySelectorAll('img').forEach(x=>x.classList.remove('selected'));
-    im.classList.add('selected');
-    const ni=new Image();ni.crossOrigin='anonymous';
-    ni.onload=()=>{logoImg=ni;setMode('image');draw()};
-    ni.src=l.src;
-  };
-  const btnMain=document.createElement('button');btnMain.textContent='作为主图';
-  btnMain.onclick=()=>{
-    logoImg=null;mainImgLogoSrc=l.src;
-    logoGrid.querySelectorAll('img').forEach(x=>x.classList.remove('selected'));
-    const ni=new Image();ni.crossOrigin='anonymous';
-    ni.onload=()=>{img=ni;placeholder.style.display='none';canvasWrap.style.display='inline-block';dlBtn.disabled=false;draw()};
-    ni.src=l.src;
-  };
-  btns.appendChild(btnWm);btns.appendChild(btnMain);
-  wrap.appendChild(im);wrap.appendChild(btns);
-  logoGrid.appendChild(wrap);
-});
-
-function setMode(m){
-  mode=m;
-  document.getElementById('textWmPanel').style.display=m==='text'?'':'none';
-  document.getElementById('imgWmPanel').style.display=m==='image'?'':'none';
-  document.getElementById('tabText').classList.toggle('active',m==='text');
-  document.getElementById('tabImg').classList.toggle('active',m==='image');
-  draw();
-}
-
-function getImgPos(cw,ch,lw,lh){
-  const p=iwPos.value,pad=20;
-  if(p==='custom')return[iwCustomX*cw,iwCustomY*ch];
-  const xs={l:pad+lw/2,c:cw/2,r:cw-pad-lw/2},ys={t:pad+lh/2,m:ch/2,b:ch-pad-lh/2};
-  return[xs[p[1]]||xs.c,ys[p[0]]||ys.m];
-}
-function applyImgPreset(){if(iwPos.value!=='custom'){iwCustomX=.5;iwCustomY=.5}}
-
-// Patch draw to support both modes
-const _origDraw=draw;
-draw=function(){
-  if(!img)return;
-  cv.width=img.width;cv.height=img.height;
-  ctx.drawImage(img,0,0);
-  if(mode==='text'){
-    const text=wText.value;if(!text)return;
-    const size=+wSize.value,alpha=wAlpha.value/100,angle=wRotate.value*Math.PI/180,font=wFont.value;
-    const bold=wBold.checked?'bold ':'';
-    ctx.save();
-    ctx.font=`${bold}${size}px "${font}"`;
-    ctx.fillStyle=wColor.value;ctx.globalAlpha=alpha;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    const m=ctx.measureText(text),tw=m.width,th=size;
-    const[x,y]=getPos(cv.width,cv.height,tw,th);
-    ctx.translate(x,y);ctx.rotate(angle);
-    if(wStroke.checked){ctx.strokeStyle=wStrokeColor.value;ctx.lineWidth=+wStrokeWidth.value;ctx.lineJoin='round';ctx.strokeText(text,0,0)}
-    ctx.fillText(text,0,0);
-    ctx.restore();
-  } else if(mode==='image'&&logoImg){
-    const scale=iwScale.value/100,alpha=iwAlpha.value/100,angle=iwRotate.value*Math.PI/180;
-    const lw=logoImg.width*scale*(cv.width/800),lh=logoImg.height*scale*(cv.width/800);
-    const[x,y]=getImgPos(cv.width,cv.height,lw,lh);
-    ctx.save();ctx.globalAlpha=alpha;
-    ctx.translate(x,y);ctx.rotate(angle);
-    ctx.drawImage(logoImg,-lw/2,-lh/2,lw,lh);
-    ctx.restore();
-  }
-};
-
-// Patch drag to support image watermark mode
-const _origStartDrag=startDrag;
-startDrag=function(e){
-  if(!img)return;
+  if(!dragging) return;
   e.preventDefault();
-  const rect=cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e;
-  const sx=(pt.clientX-rect.left)/rect.width,sy=(pt.clientY-rect.top)/rect.height;
-  if(mode==='text'){
-    if(wPos.value!=='custom'){
-      const text=wText.value,size=+wSize.value,font=wFont.value,bold=wBold.checked?'bold ':'';
-      ctx.font=`${bold}${size}px "${font}"`;
-      const tw=ctx.measureText(text).width,th=size;
-      const[px,py]=getPos(cv.width,cv.height,tw,th);
-      customX=px/cv.width;customY=py/cv.height;
-      wPos.value='custom';
-    }
-    dragOffX=sx-customX;dragOffY=sy-customY;
-  } else {
-    if(iwPos.value!=='custom'){
-      const scale=iwScale.value/100;
-      if(logoImg){
-        const lw=logoImg.width*scale*(cv.width/800),lh=logoImg.height*scale*(cv.width/800);
-        const[px,py]=getImgPos(cv.width,cv.height,lw,lh);
-        iwCustomX=px/cv.width;iwCustomY=py/cv.height;
-      }
-      iwPos.value='custom';
-    }
-    dragOffX=sx-iwCustomX;dragOffY=sy-iwCustomY;
-  }
-  dragging=true;
-};
-canvasWrap.onmousedown=startDrag;
-canvasWrap.ontouchstart=startDrag;
-
-const _origMoveDrag=moveDrag;
-moveDrag=function(e){
-  const rect=cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e;
-  const nx=Math.max(0,Math.min(1,(pt.clientX-rect.left)/rect.width-dragOffX));
-  const ny=Math.max(0,Math.min(1,(pt.clientY-rect.top)/rect.height-dragOffY));
-  if(mode==='text'){customX=nx;customY=ny}
-  else{iwCustomX=nx;iwCustomY=ny}
+  const rect = cv.getBoundingClientRect();
+  const pt   = e.touches ? e.touches[0] : e;
+  const nx   = Math.max(0, Math.min(1, (pt.clientX - rect.left) / rect.width  - dragOffX));
+  const ny   = Math.max(0, Math.min(1, (pt.clientY - rect.top)  / rect.height - dragOffY));
+  if(mode === 'text'){ textCustomX = nx; textCustomY = ny; }
+  else               { iwCustomX   = nx; iwCustomY   = ny; }
   draw();
-};
+}
+
+canvasWrap.addEventListener('mousedown',  startDrag);
+canvasWrap.addEventListener('touchstart', startDrag, {passive:false});
+window.addEventListener('mousemove',  moveDrag);
+window.addEventListener('touchmove',  e => { if(dragging){ e.preventDefault(); moveDrag(e); } }, {passive:false});
+window.addEventListener('mouseup',  () => dragging = false);
+window.addEventListener('touchend', () => dragging = false);
 </script>
 </body>
 </html>
