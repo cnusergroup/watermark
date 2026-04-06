@@ -1,0 +1,10 @@
+Watermark Tool - AWS Deployment Info
+=====================================
+Date: 2026-03-22
+
+S3 Bucket:          watermark-tool-631483bd
+S3 Region:          us-east-1
+Distribution ID:    E2HPKU7YUYAQ9X
+CloudFront Domain:  https://d2yegr0n2o4mq4.cloudfront.net
+OAC ID:             E6YXOBJFY746G
+AWS Account:        778409058172
