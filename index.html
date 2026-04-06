@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>图片水印工具</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#f5f5f5;--panel:#fff;--text:#222;--border:#ddd;--accent:#4a90d9;--shadow:0 2px 12px rgba(0,0,0,.08)}
@@ -49,9 +50,9 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
       <p>📁 点击或拖拽上传图片</p>
       <p style="font-size:.8em;opacity:.5;margin-top:4px">支持 JPG / PNG / GIF</p>
     </label>
-    <div class="group"><label>水印文字</label><input type="text" id="wText" value="水印文字" oninput="draw()"></div>
+    <div class="group"><label>水印文字</label><input type="text" id="wText" value="© 版权所有" oninput="draw()"><p style="font-size:.75em;opacity:.5;margin-top:4px">提示：中英文混排时请在中英文/数字之间加空格，如：AWS 云服务</p></div>
     <div class="group"><label>字体</label><select id="wFont" onchange="draw()">
-      <option>Arial</option><option>Georgia</option><option>微软雅黑</option><option>楷体</option><option>黑体</option><option>宋体</option><option>Courier New</option><option>Times New Roman</option>
+      <option value="Noto Sans SC" selected>思源黑体 SC</option><option value="Amazon Ember">Amazon Ember</option><option>Arial</option><option>Georgia</option><option>微软雅黑</option><option>楷体</option><option>黑体</option><option>宋体</option><option>Courier New</option><option>Times New Roman</option>
     </select></div>
     <div class="group"><label>文字大小</label><div class="row"><input type="range" id="wSize" min="10" max="200" value="48" oninput="draw();sizeVal.textContent=this.value+'px'"><span class="val" id="sizeVal">48px</span></div></div>
     <div class="group"><label>颜色 & 透明度</label><div class="row"><input type="color" id="wColor" value="#ffffff" oninput="draw()"><input type="range" id="wAlpha" min="0" max="100" value="50" oninput="draw();alphaVal.textContent=this.value+'%'"><span class="val" id="alphaVal">50%</span></div></div>
