@@ -39,8 +39,8 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
 .logo-item img{width:100%;aspect-ratio:1;object-fit:contain;border:2px solid var(--border);border-radius:8px;padding:4px;background:var(--bg);transition:all .2s;display:block}
 .logo-item:hover img{border-color:var(--accent)}
 .logo-item img.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
-.logo-btns{display:flex;gap:2px;margin-top:3px}
-.logo-btns button{flex:1;padding:3px 0;font-size:.65em;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer;transition:all .2s;white-space:nowrap}
+.logo-btns{display:flex;flex-direction:column;gap:2px;margin-top:3px}
+.logo-btns button{padding:3px 0;font-size:.65em;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer;transition:all .2s;white-space:nowrap}
 .logo-btns button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
 .canvas-wrap{position:relative;display:inline-block;max-width:100%;max-height:calc(100vh - 100px);cursor:default;touch-action:none}
 .canvas-wrap canvas{max-width:100%;max-height:calc(100vh - 100px);border-radius:8px;box-shadow:var(--shadow)}
@@ -121,7 +121,7 @@ function loadImg(file){
   const r=new FileReader();
   r.onload=e=>{
     const i=new Image();
-    i.onload=()=>{img=i;placeholder.style.display='none';canvasWrap.style.display='inline-block';dlBtn.disabled=false;draw()};
+    i.onload=()=>{img=i;mainImgLogoSrc=null;placeholder.style.display='none';canvasWrap.style.display='inline-block';dlBtn.disabled=false;draw()};
     i.src=e.target.result;
   };
   r.readAsDataURL(file);
@@ -195,7 +195,7 @@ function moveDrag(e){
   draw();
 }
 // --- Mode switching ---
-let mode='text', logoImg=null, iwCustomX=.5, iwCustomY=.5;
+let mode='text', logoImg=null, iwCustomX=.5, iwCustomY=.5, mainImgLogoSrc=null;
 const logos=[
   {src:'logos/ug-qrcode-logo.png',name:'UG 二维码'},
   {src:'logos/top-left-logo.png',name:'左上角'},
@@ -212,6 +212,12 @@ logos.forEach((l,i)=>{
   const btns=document.createElement('div');btns.className='logo-btns';
   const btnWm=document.createElement('button');btnWm.textContent='作为水印';
   btnWm.onclick=()=>{
+    if(mainImgLogoSrc===l.src){
+      img=null;mainImgLogoSrc=null;
+      placeholder.style.display='';canvasWrap.style.display='none';dlBtn.disabled=true;
+      alert('当前主图就是该 Logo，已清除主图，请先上传一张主图再添加水印');
+      return;
+    }
     logoGrid.querySelectorAll('img').forEach(x=>x.classList.remove('selected'));
     im.classList.add('selected');
     const ni=new Image();ni.crossOrigin='anonymous';
@@ -220,6 +226,8 @@ logos.forEach((l,i)=>{
   };
   const btnMain=document.createElement('button');btnMain.textContent='作为主图';
   btnMain.onclick=()=>{
+    logoImg=null;mainImgLogoSrc=l.src;
+    logoGrid.querySelectorAll('img').forEach(x=>x.classList.remove('selected'));
     const ni=new Image();ni.crossOrigin='anonymous';
     ni.onload=()=>{img=ni;placeholder.style.display='none';canvasWrap.style.display='inline-block';dlBtn.disabled=false;draw()};
     ni.src=l.src;
