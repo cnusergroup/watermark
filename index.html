@@ -31,6 +31,13 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
 .btn{display:inline-block;padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.95em;width:100%;text-align:center;transition:opacity .2s}
 .btn:hover{opacity:.85}
 .btn:disabled{opacity:.4;cursor:not-allowed}
+.mode-tabs{display:flex;gap:6px;margin-bottom:14px}
+.mode-tab{flex:1;padding:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer;font-size:.85em;font-weight:600;text-align:center;transition:all .2s}
+.mode-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.logo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.logo-grid img{width:100%;aspect-ratio:1;object-fit:contain;border:2px solid var(--border);border-radius:8px;cursor:pointer;padding:4px;background:var(--bg);transition:all .2s}
+.logo-grid img:hover{border-color:var(--accent)}
+.logo-grid img.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
 .canvas-wrap{position:relative;display:inline-block;max-width:100%;max-height:calc(100vh - 100px);cursor:default;touch-action:none}
 .canvas-wrap canvas{max-width:100%;max-height:calc(100vh - 100px);border-radius:8px;box-shadow:var(--shadow)}
 .no-img{opacity:.4;font-size:1.1em}
@@ -50,6 +57,25 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
       <p>📁 点击或拖拽上传图片</p>
       <p style="font-size:.8em;opacity:.5;margin-top:4px">支持 JPG / PNG / GIF</p>
     </label>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabText" onclick="setMode('text')">✏️ 文字水印</button>
+      <button class="mode-tab" id="tabImg" onclick="setMode('image')">🖼 图片水印</button>
+    </div>
+    <div id="imgWmPanel" style="display:none">
+      <div class="group"><label>常用 Logo</label>
+        <div class="logo-grid" id="logoGrid"></div>
+      </div>
+      <div class="group"><label>预设位置</label><select id="iwPos" onchange="applyImgPreset();draw()">
+        <option value="tl">左上角</option><option value="tc">上居中</option><option value="tr">右上角</option>
+        <option value="ml">左居中</option><option value="mc" selected>正中央</option><option value="mr">右居中</option>
+        <option value="bl">左下角</option><option value="bc">下居中</option><option value="br">右下角</option>
+        <option value="custom">自定义（拖拽）</option>
+      </select></div>
+      <div class="group"><label>大小</label><div class="row"><input type="range" id="iwScale" min="10" max="100" value="30" oninput="draw();iwScaleVal.textContent=this.value+'%'"><span class="val" id="iwScaleVal">30%</span></div></div>
+      <div class="group"><label>透明度</label><div class="row"><input type="range" id="iwAlpha" min="0" max="100" value="80" oninput="draw();iwAlphaVal.textContent=this.value+'%'"><span class="val" id="iwAlphaVal">80%</span></div></div>
+      <div class="group"><label>旋转角度</label><div class="row"><input type="range" id="iwRotate" min="-180" max="180" value="0" oninput="draw();iwRotVal.textContent=this.value+'°'"><span class="val" id="iwRotVal">0°</span></div></div>
+    </div>
+    <div id="textWmPanel">
     <div class="group"><label>水印文字</label><input type="text" id="wText" value="© 版权所有" oninput="draw()"><p style="font-size:.75em;opacity:.5;margin-top:4px">提示：中英文混排时请在中英文/数字之间加空格，如：AWS 云服务</p></div>
     <div class="group"><label>字体</label><select id="wFont" onchange="draw()">
       <option value="Noto Sans SC" selected>思源黑体 SC</option><option value="Amazon Ember">Amazon Ember</option><option>Arial</option><option>Georgia</option><option>微软雅黑</option><option>楷体</option><option>黑体</option><option>宋体</option><option>Courier New</option><option>Times New Roman</option>
@@ -66,6 +92,7 @@ h1{font-size:1.3em;margin-bottom:16px;display:flex;align-items:center;justify-co
     <div class="group"><label><input type="checkbox" id="wBold" onchange="draw()"> 文字加粗</label></div>
     <div class="group"><label><input type="checkbox" id="wStroke" onchange="draw()"> 文字描边</label></div>
     <div class="group" id="strokeOpts" style="display:none"><label>描边颜色 & 宽度</label><div class="row"><input type="color" id="wStrokeColor" value="#000000" oninput="draw()"><input type="range" id="wStrokeWidth" min="1" max="20" value="2" oninput="draw();strokeWVal.textContent=this.value+'px'"><span class="val" id="strokeWVal">2px</span></div></div>
+    </div>
     <button class="btn" id="dlBtn" disabled onclick="download()">⬇ 下载水印图片</button>
   </div>
   <div class="preview-area" id="previewArea">
@@ -163,6 +190,121 @@ function moveDrag(e){
   customY=Math.max(0,Math.min(1,(pt.clientY-rect.top)/rect.height-dragOffY));
   draw();
 }
+// --- Mode switching ---
+let mode='text', logoImg=null, iwCustomX=.5, iwCustomY=.5;
+const logos=[
+  {src:'logos/ug-qrcode-logo.png',name:'UG 二维码'},
+  {src:'logos/top-left-logo.png',name:'左上角'},
+  {src:'logos/black-logo.png',name:'黑色'},
+  {src:'logos/resource-2.png',name:'资源 2'},
+  {src:'logos/resource-3.png',name:'资源 3'},
+  {src:'logos/resource-4.png',name:'资源 4'},
+  {src:'logos/resource-5.png',name:'资源 5'}
+];
+const logoGrid=document.getElementById('logoGrid');
+logos.forEach((l,i)=>{
+  const im=document.createElement('img');im.src=l.src;im.alt=l.name;im.title=l.name;
+  im.onclick=()=>{
+    logoGrid.querySelectorAll('img').forEach(x=>x.classList.remove('selected'));
+    im.classList.add('selected');
+    const ni=new Image();ni.crossOrigin='anonymous';
+    ni.onload=()=>{logoImg=ni;setMode('image');draw()};
+    ni.src=l.src;
+  };
+  logoGrid.appendChild(im);
+});
+
+function setMode(m){
+  mode=m;
+  document.getElementById('textWmPanel').style.display=m==='text'?'':'none';
+  document.getElementById('imgWmPanel').style.display=m==='image'?'':'none';
+  document.getElementById('tabText').classList.toggle('active',m==='text');
+  document.getElementById('tabImg').classList.toggle('active',m==='image');
+  draw();
+}
+
+function getImgPos(cw,ch,lw,lh){
+  const p=iwPos.value,pad=20;
+  if(p==='custom')return[iwCustomX*cw,iwCustomY*ch];
+  const xs={l:pad+lw/2,c:cw/2,r:cw-pad-lw/2},ys={t:pad+lh/2,m:ch/2,b:ch-pad-lh/2};
+  return[xs[p[1]]||xs.c,ys[p[0]]||ys.m];
+}
+function applyImgPreset(){if(iwPos.value!=='custom'){iwCustomX=.5;iwCustomY=.5}}
+
+// Patch draw to support both modes
+const _origDraw=draw;
+draw=function(){
+  if(!img)return;
+  cv.width=img.width;cv.height=img.height;
+  ctx.drawImage(img,0,0);
+  if(mode==='text'){
+    const text=wText.value;if(!text)return;
+    const size=+wSize.value,alpha=wAlpha.value/100,angle=wRotate.value*Math.PI/180,font=wFont.value;
+    const bold=wBold.checked?'bold ':'';
+    ctx.save();
+    ctx.font=`${bold}${size}px "${font}"`;
+    ctx.fillStyle=wColor.value;ctx.globalAlpha=alpha;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    const m=ctx.measureText(text),tw=m.width,th=size;
+    const[x,y]=getPos(cv.width,cv.height,tw,th);
+    ctx.translate(x,y);ctx.rotate(angle);
+    if(wStroke.checked){ctx.strokeStyle=wStrokeColor.value;ctx.lineWidth=+wStrokeWidth.value;ctx.lineJoin='round';ctx.strokeText(text,0,0)}
+    ctx.fillText(text,0,0);
+    ctx.restore();
+  } else if(mode==='image'&&logoImg){
+    const scale=iwScale.value/100,alpha=iwAlpha.value/100,angle=iwRotate.value*Math.PI/180;
+    const lw=logoImg.width*scale*(cv.width/800),lh=logoImg.height*scale*(cv.width/800);
+    const[x,y]=getImgPos(cv.width,cv.height,lw,lh);
+    ctx.save();ctx.globalAlpha=alpha;
+    ctx.translate(x,y);ctx.rotate(angle);
+    ctx.drawImage(logoImg,-lw/2,-lh/2,lw,lh);
+    ctx.restore();
+  }
+};
+
+// Patch drag to support image watermark mode
+const _origStartDrag=startDrag;
+startDrag=function(e){
+  if(!img)return;
+  e.preventDefault();
+  const rect=cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e;
+  const sx=(pt.clientX-rect.left)/rect.width,sy=(pt.clientY-rect.top)/rect.height;
+  if(mode==='text'){
+    if(wPos.value!=='custom'){
+      const text=wText.value,size=+wSize.value,font=wFont.value,bold=wBold.checked?'bold ':'';
+      ctx.font=`${bold}${size}px "${font}"`;
+      const tw=ctx.measureText(text).width,th=size;
+      const[px,py]=getPos(cv.width,cv.height,tw,th);
+      customX=px/cv.width;customY=py/cv.height;
+      wPos.value='custom';
+    }
+    dragOffX=sx-customX;dragOffY=sy-customY;
+  } else {
+    if(iwPos.value!=='custom'){
+      const scale=iwScale.value/100;
+      if(logoImg){
+        const lw=logoImg.width*scale*(cv.width/800),lh=logoImg.height*scale*(cv.width/800);
+        const[px,py]=getImgPos(cv.width,cv.height,lw,lh);
+        iwCustomX=px/cv.width;iwCustomY=py/cv.height;
+      }
+      iwPos.value='custom';
+    }
+    dragOffX=sx-iwCustomX;dragOffY=sy-iwCustomY;
+  }
+  dragging=true;
+};
+canvasWrap.onmousedown=startDrag;
+canvasWrap.ontouchstart=startDrag;
+
+const _origMoveDrag=moveDrag;
+moveDrag=function(e){
+  const rect=cv.getBoundingClientRect(),pt=e.touches?e.touches[0]:e;
+  const nx=Math.max(0,Math.min(1,(pt.clientX-rect.left)/rect.width-dragOffX));
+  const ny=Math.max(0,Math.min(1,(pt.clientY-rect.top)/rect.height-dragOffY));
+  if(mode==='text'){customX=nx;customY=ny}
+  else{iwCustomX=nx;iwCustomY=ny}
+  draw();
+};
 </script>
 </body>
 </html>
